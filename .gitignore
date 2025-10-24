@@ -2,3 +2,4 @@
 obj/
 recommender-system
 .clang-format
+.idea

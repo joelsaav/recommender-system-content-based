@@ -1,6 +1,6 @@
 #include "../include/file.h"
 
-File::File(const std::string inputFile) {
+File::File(const std::string& inputFile) {
   std::ifstream file{inputFile, std::ios::in};
   if (!file.is_open()) {
     std::cerr << "Error opening file: " << inputFile << std::endl;

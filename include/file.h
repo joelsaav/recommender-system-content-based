@@ -8,7 +8,7 @@
 
 class File {
  public:
-  File(const std::string inputFile);
+  explicit File(const std::string& inputFile);
  private:
   std::vector<std::vector<std::string>> text_;
 };
