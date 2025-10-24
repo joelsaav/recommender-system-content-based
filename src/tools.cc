@@ -9,8 +9,8 @@
  */
 void ErrorOutput() {
   std::cerr << "¡ERROR! WRONG ARGUMENTS" << std::endl;
-  std::cerr << "\nUsage: ./recommender-system -mx <matrixFile> -mc "
-               "<metric> -nb <numNeighbors> -pd <predictionType>"
+  std::cerr << "\nUsage: ./recommender-system -d <document1> <document2> ... -s "
+               "<stopWordsFile> -l <lemmatizationFile>"
             << std::endl;
   std::cerr << "Try './recommender-system [--help | -h]' for more information."
             << std::endl;
@@ -24,33 +24,25 @@ void ErrorOutput() {
 void HelpOutput() {
   std::cout << "=============================================================="
             << std::endl;
-  std::cout << "                  RECOMMENDER SYSTEM                       "
+  std::cout << "           CONTENT-BASED RECOMMENDER SYSTEM                "
             << std::endl;
   std::cout << "=============================================================="
             << std::endl;
   std::cout << "\nPROGRAM DESCRIPTION\n" << std::endl;
-  std::cout << "  This program implements a recommender system using\n"
-               "  collaborative filtering methods. It provides item\n"
-               "  recommendations based on user-item interaction data.\n"
+  std::cout << "  This program implements a content-based recommender system\n"
+               "  that analyzes text documents to provide recommendations\n"
+               "  based on content similarity.\n"
             << std::endl;
   std::cout << "USAGE\n" << std::endl;
-  std::cout << "  ./recommender-system -mx <matrixFile> -mc <metric> -nb "
-               "<numNeighbors> -pd <predictionType>\n"
+  std::cout << "  ./recommender-system -d <document1> <document2> ... -s "
+               "<stopWordsFile> -l <lemmatizationFile>\n"
             << std::endl;
   std::cout << "OPTIONS\n" << std::endl;
-  std::cout << "  -mx <matrixFile>      Path to file containing the user-item "
-               "matrix\n";
-  std::cout << "  -mc <metric>           Similarity metric (integer):\n"
-               "                          1: Pearson Correlation\n"
-               "                          2: Cosine Distance\n"
-               "                          3: Euclidean Distance\n";
-  std::cout << "  -nb <numNeighbors>    Number of neighbors to consider for "
-               "predictions. Must be at least 3.\n";
-  std::cout << "  -pd <predictionType>  Type of prediction (integer):\n"
-               "                          1: Simple Prediction\n"
-               "                          2: Mean Difference Prediction\n";
+  std::cout << "  -d <documents>        One or more text documents to analyze\n";
+  std::cout << "  -s <stopWordsFile>    Path to file containing stop words\n";
+  std::cout << "  -l <lemmatizationFile> Path to file containing lemmatization rules\n";
   std::cout << "\nEXAMPLES\n" << std::endl;
-  std::cout << "  ./recommender-system -mx data.txt -mc 1 -nb 5 -pd 2\n";
+  std::cout << "  ./recommender-system -d doc1.txt doc2.txt doc3.txt -s stopwords.txt -l lemmas.txt\n";
   std::cout << "\nFor more information, use: ./recommender-system --help\n";
   std::cout << "=============================================================="
             << std::endl;
@@ -67,71 +59,109 @@ void HelpOutput() {
  */
 CommandLineArgs CheckArguments(int argc, char* argv[]) {
   CommandLineArgs args;
-  switch (argc) {
-    case 1:
+  
+  if (argc == 1) {
+    ErrorOutput();
+  }
+  
+  // Check for help option
+  if (argc == 2) {
+    std::string firstArg = argv[1];
+    if (firstArg == "--help" || firstArg == "-h") {
+      HelpOutput();
+    } else {
       ErrorOutput();
-      break;
-    case 9: {
-      std::string firstArg = argv[1];
-      if (firstArg == "--help" || firstArg == "-h") {
-        HelpOutput();
-      } else {
-        std::set<std::string> optionsList = {"-mx", "-mc", "-nb", "-pd"};
-        std::set<std::string> usedOptions;
-        for (int i = 1; i < argc; i += 2) {
-          std::string currentArg = argv[i];
-
-          if (usedOptions.find(currentArg) != usedOptions.end()) {
-            ErrorOutput();
-          }
-
-          if (optionsList.find(currentArg) == optionsList.end()) {
-            ErrorOutput();
-          } else {
-            std::string optionValue = argv[i + 1];
-
-            // if (currentArg == "-mc") {
-            //   int metric = std::stoi(optionValue);
-            //   if (metric < 1 || metric > 3) ErrorOutput();
-            //   args.metric = metric;
-            // } else if (currentArg == "-nb") {
-            //   int numNeighbors = std::stoi(optionValue);
-            //   if (numNeighbors < 3) ErrorOutput();
-            //   args.numNeighbors = numNeighbors;
-            // } else if (currentArg == "-pd") {
-            //   int predictionType = std::stoi(optionValue);
-            //   if (predictionType < 1 || predictionType > 2) ErrorOutput();
-            //   args.predictionType = predictionType;
-            // } else if (currentArg == "-mx") {
-            //   std::ifstream matrixFile(optionValue);
-            //   if (!matrixFile.is_open()) {
-            //     std::cerr << "Error: Cannot open matrix file '" << optionValue
-            //               << "'." << std::endl;
-            //     exit(1);
-            //   }
-            //   args.matrixFile = optionValue;
-            //   matrixFile.close();
-            // }
-            usedOptions.insert(currentArg);
-            optionsList.erase(currentArg);
-          }
-        }
-
-        if (optionsList.size() != 0) {
-          ErrorOutput();
-        }
-      }
-      break;
-    }
-    default: {
-      std::string firstArg = argv[1];
-      if (firstArg == "--help" || firstArg == "-h") {
-        HelpOutput();
-      } else {
-        ErrorOutput();
-      }
-      break;
     }
   }
+  
+  // Minimum required arguments: program -d doc1 -s stopfile -l lemmafile = 7
+  if (argc < 7) {
+    ErrorOutput();
+  }
+  
+  bool hasDocuments = false, hasStopWords = false, hasLemmatization = false;
+  
+  for (int i = 1; i < argc; i++) {
+    std::string currentArg = argv[i];
+    
+    if (currentArg == "-d") {
+      if (hasDocuments) {
+        std::cerr << "Error: -d option specified multiple times" << std::endl;
+        ErrorOutput();
+      }
+      hasDocuments = true;
+      i++; // Move to next argument
+      
+      // Read document files until we hit another option or end of arguments
+      while (i < argc && argv[i][0] != '-') {
+        std::string filename = argv[i];
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+          std::cerr << "Error: Cannot open document file '" << filename << "'." << std::endl;
+          exit(1);
+        }
+        args.textFiles.push_back(filename);
+        file.close();
+        i++;
+      }
+      i--; // Adjust for the for loop increment
+      
+      if (args.textFiles.empty()) {
+        std::cerr << "Error: No document files specified after -d option" << std::endl;
+        ErrorOutput();
+      }
+      
+    } else if (currentArg == "-s") {
+      if (hasStopWords) {
+        std::cerr << "Error: -s option specified multiple times" << std::endl;
+        ErrorOutput();
+      }
+      if (i + 1 >= argc) {
+        std::cerr << "Error: -s option requires a filename" << std::endl;
+        ErrorOutput();
+      }
+      hasStopWords = true;
+      i++;
+      std::string stopWordsFile = argv[i];
+      std::ifstream file(stopWordsFile);
+      if (!file.is_open()) {
+        std::cerr << "Error: Cannot open stop words file '" << stopWordsFile << "'." << std::endl;
+        exit(1);
+      }
+      args.stopWordsFile = stopWordsFile;
+      file.close();
+      
+    } else if (currentArg == "-l") {
+      if (hasLemmatization) {
+        std::cerr << "Error: -l option specified multiple times" << std::endl;
+        ErrorOutput();
+      }
+      if (i + 1 >= argc) {
+        std::cerr << "Error: -l option requires a filename" << std::endl;
+        ErrorOutput();
+      }
+      hasLemmatization = true;
+      i++;
+      std::string lemmatizationFile = argv[i];
+      std::ifstream file(lemmatizationFile);
+      if (!file.is_open()) {
+        std::cerr << "Error: Cannot open lemmatization file '" << lemmatizationFile << "'." << std::endl;
+        exit(1);
+      }
+      args.lemmatizationFile = lemmatizationFile;
+      file.close();
+      
+    } else {
+      std::cerr << "Error: Unknown option '" << currentArg << "'" << std::endl;
+      ErrorOutput();
+    }
+  }
+  
+  // Check that all required options were provided
+  if (!hasDocuments || !hasStopWords || !hasLemmatization) {
+    std::cerr << "Error: Missing required options. All of -d, -s, and -l must be specified." << std::endl;
+    ErrorOutput();
+  }
+  
   return args;
 }

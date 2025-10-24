@@ -18,13 +18,4 @@ File::File(const std::string& inputFile) {
     text_.push_back(row);
   }
   file.close();
-
-  // Print the loaded text for verification
-  for (const auto& row : text_)
-  {
-    for (const auto& value : row)
-    {
-      std::cout << value << " ";
-    }
-  }
 }
