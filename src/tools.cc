@@ -90,28 +90,28 @@ CommandLineArgs CheckArguments(int argc, char* argv[]) {
           } else {
             std::string optionValue = argv[i + 1];
 
-            if (currentArg == "-mc") {
-              int metric = std::stoi(optionValue);
-              if (metric < 1 || metric > 3) ErrorOutput();
-              args.metric = metric;
-            } else if (currentArg == "-nb") {
-              int numNeighbors = std::stoi(optionValue);
-              if (numNeighbors < 3) ErrorOutput();
-              args.numNeighbors = numNeighbors;
-            } else if (currentArg == "-pd") {
-              int predictionType = std::stoi(optionValue);
-              if (predictionType < 1 || predictionType > 2) ErrorOutput();
-              args.predictionType = predictionType;
-            } else if (currentArg == "-mx") {
-              std::ifstream matrixFile(optionValue);
-              if (!matrixFile.is_open()) {
-                std::cerr << "Error: Cannot open matrix file '" << optionValue
-                          << "'." << std::endl;
-                exit(1);
-              }
-              args.matrixFile = optionValue;
-              matrixFile.close();
-            }
+            // if (currentArg == "-mc") {
+            //   int metric = std::stoi(optionValue);
+            //   if (metric < 1 || metric > 3) ErrorOutput();
+            //   args.metric = metric;
+            // } else if (currentArg == "-nb") {
+            //   int numNeighbors = std::stoi(optionValue);
+            //   if (numNeighbors < 3) ErrorOutput();
+            //   args.numNeighbors = numNeighbors;
+            // } else if (currentArg == "-pd") {
+            //   int predictionType = std::stoi(optionValue);
+            //   if (predictionType < 1 || predictionType > 2) ErrorOutput();
+            //   args.predictionType = predictionType;
+            // } else if (currentArg == "-mx") {
+            //   std::ifstream matrixFile(optionValue);
+            //   if (!matrixFile.is_open()) {
+            //     std::cerr << "Error: Cannot open matrix file '" << optionValue
+            //               << "'." << std::endl;
+            //     exit(1);
+            //   }
+            //   args.matrixFile = optionValue;
+            //   matrixFile.close();
+            // }
             usedOptions.insert(currentArg);
             optionsList.erase(currentArg);
           }
