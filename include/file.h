@@ -2,13 +2,15 @@
 #define FILE_H_
 
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <vector>
 
 class File {
  public:
   File(const std::string inputFile);
  private:
-  std::vector<std::string> text_;
+  std::vector<std::vector<std::string>> text_;
 };
 
 #endif
