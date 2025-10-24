@@ -1,4 +1,4 @@
-#include "include/file.h"
+#include "../include/file.h"
 
 File::File(const std::string inputFile) {
   std::ifstream file{inputFile, std::ios::in};
