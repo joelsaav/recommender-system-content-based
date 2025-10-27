@@ -10,11 +10,39 @@ int main(const int argc, char* argv[]) {
   std::string stopWordsFile = args.stopWordsFile;
   std::string lemmatizationFile = args.lemmatizationFile;
 
+  // Load stop words and lemmatization rules
+  std::cout << "Loading stop words from: " << stopWordsFile << std::endl;
+  std::set<std::string> stopWords = LoadStopWords(stopWordsFile);
+  std::cout << "Loaded " << stopWords.size() << " stop words." << std::endl;
+  
+  std::cout << "Loading lemmatization rules from: " << lemmatizationFile << std::endl;
+  std::map<std::string, std::string> lemmaRules = LoadLemmatizationRules(lemmatizationFile);
+  std::cout << "Loaded " << lemmaRules.size() << " lemmatization rules." << std::endl;
+
+  // Process each text file
   std::vector<File> files;
   for (const std::string& file : textFiles) {
-    File temFile(file);
-    files.push_back(temFile);
+    std::cout << "\n" << std::string(60, '=') << std::endl;
+    std::cout << "Processing file: " << file << std::endl;
+    std::cout << std::string(60, '=') << std::endl;
+    
+    File tempFile(file); // Create File object for each text file
+    
+    // Process the file through all stages
+    tempFile.RemoveStopWords(stopWords);
+    tempFile.ApplyLemmatization(lemmaRules);
+    
+    // Display all three versions of the text
+    tempFile.PrintOriginalText();
+    tempFile.PrintTextWithoutStopWords();
+    tempFile.PrintLemmatizedText();
+    
+    files.push_back(tempFile);
   }
+  
+  std::cout << "\n" << std::string(60, '=') << std::endl;
+  std::cout << "Processing complete for " << files.size() << " files." << std::endl;
+  std::cout << std::string(60, '=') << std::endl;
     
   return 0;
 }

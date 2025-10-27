@@ -2,6 +2,9 @@
 
 #include <fstream>
 #include <set>
+#include <sstream>
+#include <algorithm>
+#include <cctype>
 
 /**
  * @brief This function prints an error message for incorrect arguments
@@ -10,7 +13,7 @@
 void ErrorOutput() {
   std::cerr << "¡ERROR! WRONG ARGUMENTS" << std::endl;
   std::cerr << "\nUsage: ./recommender-system -d <document1> <document2> ... -s "
-               "<stopWordsFile> -l <lemmatizationFile>"
+               "<stopWordsFile> -l <lemmatizationFile.json>"
             << std::endl;
   std::cerr << "Try './recommender-system [--help | -h]' for more information."
             << std::endl;
@@ -40,9 +43,9 @@ void HelpOutput() {
   std::cout << "OPTIONS\n" << std::endl;
   std::cout << "  -d <documents>        One or more text documents to analyze\n";
   std::cout << "  -s <stopWordsFile>    Path to file containing stop words\n";
-  std::cout << "  -l <lemmatizationFile> Path to file containing lemmatization rules\n";
+  std::cout << "  -l <lemmatizationFile> Path to JSON file containing lemmatization rules\n";
   std::cout << "\nEXAMPLES\n" << std::endl;
-  std::cout << "  ./recommender-system -d doc1.txt doc2.txt doc3.txt -s stopwords.txt -l lemmas.txt\n";
+  std::cout << "  ./recommender-system -d doc1.txt doc2.txt doc3.txt -s stopwords.txt -l corpus-en.json\n";
   std::cout << "\nFor more information, use: ./recommender-system --help\n";
   std::cout << "=============================================================="
             << std::endl;
@@ -164,4 +167,124 @@ CommandLineArgs CheckArguments(int argc, char* argv[]) {
   }
   
   return args;
+}
+
+/**
+ * @brief Loads stop words from a file into a set
+ * @param filename Path to the stop words file
+ * @return Set containing all stop words in lowercase
+ */
+std::set<std::string> LoadStopWords(const std::string& filename) {
+  std::set<std::string> stopWords;
+  std::ifstream file(filename);
+  
+  if (!file.is_open()) {
+    std::cerr << "Error: Cannot open stop words file '" << filename << "'." << std::endl;
+    exit(1);
+  }
+  
+  std::string word;
+  while (file >> word) {
+    // Convert to lowercase for case-insensitive matching
+    std::transform(word.begin(), word.end(), word.begin(), 
+                   [](unsigned char c) { return std::tolower(c); });
+    stopWords.insert(word);
+  }
+  
+  file.close();
+  return stopWords;
+}
+
+/**
+ * @brief Loads lemmatization rules from a JSON file into a map
+ * Expected format: JSON object with key-value pairs {"original_word": "lemmatized_word"}
+ * @param filename Path to the JSON lemmatization file
+ * @return Map with original words as keys and lemmatized words as values
+ */
+std::map<std::string, std::string> LoadLemmatizationRules(const std::string& filename) {
+  std::map<std::string, std::string> lemmaMap;
+  std::ifstream file(filename);
+  
+  if (!file.is_open()) {
+    std::cerr << "Error: Cannot open lemmatization file '" << filename << "'." << std::endl;
+    exit(1);
+  }
+  
+  std::string content;
+  std::string line;
+  
+  // Read entire file content
+  while (std::getline(file, line)) {
+    content += line;
+  }
+  file.close();
+  
+  // Simple JSON parser for key-value pairs
+  size_t pos = 0;
+  bool inObject = false;
+  
+  while (pos < content.length()) {
+    char c = content[pos];
+    
+    if (c == '{') {
+      inObject = true;
+      pos++;
+      continue;
+    }
+    
+    if (c == '}') {
+      break;
+    }
+    
+    if (inObject && c == '"') {
+      // Found start of key
+      size_t keyStart = pos + 1;
+      size_t keyEnd = content.find('"', keyStart);
+      
+      if (keyEnd == std::string::npos) {
+        std::cerr << "Error: Malformed JSON in lemmatization file" << std::endl;
+        exit(1);
+      }
+      
+      std::string key = content.substr(keyStart, keyEnd - keyStart);
+      
+      // Find the colon
+      pos = content.find(':', keyEnd);
+      if (pos == std::string::npos) {
+        std::cerr << "Error: Malformed JSON - missing colon" << std::endl;
+        exit(1);
+      }
+      
+      // Find start of value
+      pos = content.find('"', pos);
+      if (pos == std::string::npos) {
+        std::cerr << "Error: Malformed JSON - missing value quote" << std::endl;
+        exit(1);
+      }
+      
+      size_t valueStart = pos + 1;
+      size_t valueEnd = content.find('"', valueStart);
+      
+      if (valueEnd == std::string::npos) {
+        std::cerr << "Error: Malformed JSON - missing closing value quote" << std::endl;
+        exit(1);
+      }
+      
+      std::string value = content.substr(valueStart, valueEnd - valueStart);
+      
+      // Convert both to lowercase for consistent matching
+      std::transform(key.begin(), key.end(), key.begin(), 
+                     [](unsigned char c) { return std::tolower(c); });
+      std::transform(value.begin(), value.end(), value.begin(), 
+                     [](unsigned char c) { return std::tolower(c); });
+      
+      lemmaMap[key] = value;
+      
+      pos = valueEnd + 1;
+    } else {
+      pos++;
+    }
+  }
+  
+  return lemmaMap;
 }
