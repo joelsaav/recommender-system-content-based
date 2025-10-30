@@ -5,6 +5,8 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <cmath>
+#include <iomanip>
 
 /**
  * @brief This function prints an error message for incorrect arguments
@@ -287,4 +289,145 @@ std::map<std::string, std::string> LoadLemmatizationRules(const std::string& fil
   }
   
   return lemmaMap;
+}
+
+/**
+ * @brief Builds a vocabulary (term -> index mapping) from all documents
+ * @param files Vector of File objects
+ * @return Map with term as key and index as value
+ */
+std::map<std::string, int> BuildVocabulary(const std::vector<File>& files) {
+  std::set<std::string> uniqueTerms;
+  
+  // Collect all unique terms from all documents
+  for (const auto& file : files) {
+    const auto& tf = file.GetTF();
+    for (const auto& termFreq : tf) {
+      uniqueTerms.insert(termFreq.first);
+    }
+  }
+  
+  // Create indexed vocabulary
+  std::map<std::string, int> vocabulary;
+  int index = 0;
+  for (const auto& term : uniqueTerms) {
+    vocabulary[term] = index++;
+  }
+  
+  return vocabulary;
+}
+
+/**
+ * @brief Calculates IDF (Inverse Document Frequency) for all terms
+ * @param files Vector of File objects
+ * @param totalDocs Total number of documents
+ * @return Map with term as key and IDF value
+ */
+std::map<std::string, double> CalculateIDF(const std::vector<File>& files, int totalDocs) {
+  std::map<std::string, int> documentFrequency;
+  
+  // Count in how many documents each term appears
+  for (const auto& file : files) {
+    const auto& tf = file.GetTF();
+    std::set<std::string> termsInDoc;
+    
+    for (const auto& termFreq : tf) {
+      termsInDoc.insert(termFreq.first);
+    }
+    
+    for (const auto& term : termsInDoc) {
+      documentFrequency[term]++;
+    }
+  }
+  
+  // Calculate IDF for each term
+  std::map<std::string, double> idfMap;
+  for (const auto& dfPair : documentFrequency) {
+    const std::string& term = dfPair.first;
+    int df = dfPair.second;
+    // Using smoothed IDF: log((N + 1) / (df + 1))
+    double idf = std::log((double)(totalDocs + 1) / (df + 1));
+    idfMap[term] = idf;
+  }
+  
+  return idfMap;
+}
+
+/**
+ * @brief Calculates cosine similarity between two TF-IDF vectors
+ * @param tfidf1 TF-IDF map for document 1
+ * @param tfidf2 TF-IDF map for document 2
+ * @return Cosine similarity value (0 to 1)
+ */
+double CalculateCosineSimilarity(const std::map<std::string, double>& tfidf1, 
+                                  const std::map<std::string, double>& tfidf2) {
+  double dotProduct = 0.0;
+  double norm1 = 0.0;
+  double norm2 = 0.0;
+  
+  // Calculate dot product and norm for tfidf1
+  for (const auto& term1 : tfidf1) {
+    const std::string& term = term1.first;
+    double value1 = term1.second;
+    
+    norm1 += value1 * value1;
+    
+    auto it2 = tfidf2.find(term);
+    if (it2 != tfidf2.end()) {
+      dotProduct += value1 * it2->second;
+    }
+  }
+  
+  // Calculate norm for tfidf2
+  for (const auto& term2 : tfidf2) {
+    double value2 = term2.second;
+    norm2 += value2 * value2;
+  }
+  
+  // Avoid division by zero
+  if (norm1 == 0.0 || norm2 == 0.0) {
+    return 0.0;
+  }
+  
+  return dotProduct / (std::sqrt(norm1) * std::sqrt(norm2));
+}
+
+/**
+ * @brief Prints a similarity matrix showing cosine similarity between all document pairs
+ * @param files Vector of File objects
+ */
+void PrintSimilarityMatrix(const std::vector<File>& files) {
+  int n = files.size();
+  
+  std::cout << "\n" << std::string(80, '=') << std::endl;
+  std::cout << "COSINE SIMILARITY MATRIX" << std::endl;
+  std::cout << std::string(80, '=') << std::endl;
+  
+  // Print header
+  std::cout << std::setw(20) << " ";
+  for (int j = 0; j < n; j++) {
+    std::cout << std::setw(15) << "Doc " + std::to_string(j);
+  }
+  std::cout << std::endl;
+  std::cout << std::string(80, '-') << std::endl;
+  
+  // Print matrix
+  for (int i = 0; i < n; i++) {
+    std::cout << std::setw(20) << ("Document " + std::to_string(i));
+    
+    for (int j = 0; j < n; j++) {
+      if (i == j) {
+        std::cout << std::setw(15) << std::fixed << std::setprecision(6) << 1.0;
+      } else {
+        double similarity = CalculateCosineSimilarity(
+          files[i].GetTFIDF(), 
+          files[j].GetTFIDF()
+        );
+        std::cout << std::setw(15) << std::fixed << std::setprecision(6) << similarity;
+      }
+    }
+    std::cout << std::endl;
+  }
+  
+  std::cout << std::string(80, '=') << std::endl;
 }

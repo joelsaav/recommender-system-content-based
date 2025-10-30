@@ -7,6 +7,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <cmath>
 
 class File {
  public:
@@ -26,13 +27,29 @@ class File {
   void PrintTextWithoutStopWords() const;
   void PrintLemmatizedText() const;
   
+  // TF-IDF methods
+  void CalculateTF();
+  void CalculateTFIDF(const std::map<std::string, double>& idfMap);
+  const std::map<std::string, int>& GetTF() const;
+  const std::map<std::string, double>& GetTFIDF() const;
+  std::string GetFileName() const;
+  
+  // Print TF-IDF table
+  void PrintTFIDFTable(const std::map<std::string, int>& vocabulary, 
+                       const std::map<std::string, double>& idfMap) const;
+  
  private:
+  std::string fileName_;
   std::vector<std::vector<std::string>> originalText_;
   std::vector<std::vector<std::string>> textWithoutStopWords_;
   std::vector<std::vector<std::string>> lemmatizedText_;
   
+  std::map<std::string, int> tf_;  // Term frequency
+  std::map<std::string, double> tfidf_;  // TF-IDF values
+  
   // Helper method to convert string to lowercase
   std::string ToLowerCase(const std::string& str) const;
+  std::string CleanToken(const std::string& token) const;
 };
 
 #endif

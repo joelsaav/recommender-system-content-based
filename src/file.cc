@@ -1,8 +1,9 @@
 #include "../include/file.h"
 #include <algorithm>
 #include <cctype>
+#include <iomanip>
 
-File::File(const std::string& inputFile) {
+File::File(const std::string& inputFile) : fileName_(inputFile) {
   std::ifstream file{inputFile, std::ios::in};
   if (!file.is_open()) {
     std::cerr << "Error opening file: " << inputFile << std::endl;
@@ -119,4 +120,97 @@ std::string File::ToLowerCase(const std::string& str) const {
   std::transform(result.begin(), result.end(), result.begin(), 
                  [](unsigned char c) { return std::tolower(c); });
   return result;
+}
+
+std::string File::CleanToken(const std::string& token) const {
+  std::string cleaned = token;
+  // Remove punctuation from beginning and end
+  while (!cleaned.empty() && !std::isalnum(cleaned.front())) {
+    cleaned.erase(cleaned.begin());
+  }
+  while (!cleaned.empty() && !std::isalnum(cleaned.back())) {
+    cleaned.pop_back();
+  }
+  return ToLowerCase(cleaned);
+}
+
+void File::CalculateTF() {
+  tf_.clear();
+  
+  // Count term frequencies from lemmatized text
+  for (const auto& line : lemmatizedText_) {
+    for (const auto& word : line) {
+      if (word == "---" || word.empty()) continue;
+      
+      std::string cleanedWord = CleanToken(word);
+      if (!cleanedWord.empty()) {
+        tf_[cleanedWord]++;
+      }
+    }
+  }
+}
+
+void File::CalculateTFIDF(const std::map<std::string, double>& idfMap) {
+  tfidf_.clear();
+  
+  for (const auto& termFreq : tf_) {
+    const std::string& term = termFreq.first;
+    int tf = termFreq.second;
+    
+    auto idfIt = idfMap.find(term);
+    if (idfIt != idfMap.end()) {
+      double idf = idfIt->second;
+      tfidf_[term] = tf * idf;
+    }
+  }
+}
+
+const std::map<std::string, int>& File::GetTF() const {
+  return tf_;
+}
+
+const std::map<std::string, double>& File::GetTFIDF() const {
+  return tfidf_;
+}
+
+std::string File::GetFileName() const {
+  return fileName_;
+}
+
+void File::PrintTFIDFTable(const std::map<std::string, int>& vocabulary,
+                           const std::map<std::string, double>& idfMap) const {
+  std::cout << "\n" << std::string(90, '=') << std::endl;
+  std::cout << "TF-IDF TABLE FOR: " << fileName_ << std::endl;
+  std::cout << std::string(90, '=') << std::endl;
+  
+  std::cout << std::left << std::setw(8) << "Index" 
+            << std::setw(20) << "Term" 
+            << std::setw(10) << "TF"
+            << std::setw(15) << "IDF"
+            << std::setw(15) << "TF-IDF" << std::endl;
+  std::cout << std::string(90, '-') << std::endl;
+  
+  for (const auto& vocabTerm : vocabulary) {
+    const std::string& term = vocabTerm.first;
+    int index = vocabTerm.second;
+    
+    auto tfIt = tf_.find(term);
+    int tf = (tfIt != tf_.end()) ? tfIt->second : 0;
+    
+    auto idfIt = idfMap.find(term);
+    double idf = (idfIt != idfMap.end()) ? idfIt->second : 0.0;
+    
+    auto tfidfIt = tfidf_.find(term);
+    double tfidf = (tfidfIt != tfidf_.end()) ? tfidfIt->second : 0.0;
+    
+    if (tf > 0) {  // Only show terms that appear in this document
+      std::cout << std::left << std::setw(8) << index
+                << std::setw(20) << term
+                << std::setw(10) << tf
+                << std::setw(15) << std::fixed << std::setprecision(6) << idf
+                << std::setw(15) << std::fixed << std::setprecision(6) << tfidf
+                << std::endl;
+    }
+  }
+  std::cout << std::string(90, '=') << std::endl;
 }
