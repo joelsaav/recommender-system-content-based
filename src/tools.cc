@@ -87,8 +87,7 @@ CommandLineArgs CheckArguments(int argc, char* argv[]) {
   bool hasDocuments = false, hasStopWords = false, hasLemmatization = false;
   
   for (int i = 1; i < argc; i++) {
-    std::string currentArg = argv[i];
-    
+    std::string currentArg = argv[i]; 
     if (currentArg == "-d") {
       if (hasDocuments) {
         std::cerr << "Error: -d option specified multiple times" << std::endl;
@@ -96,7 +95,6 @@ CommandLineArgs CheckArguments(int argc, char* argv[]) {
       }
       hasDocuments = true;
       i++; // Move to next argument
-      
       // Read document files until we hit another option or end of arguments
       while (i < argc && argv[i][0] != '-') {
         std::string filename = argv[i];
@@ -110,12 +108,10 @@ CommandLineArgs CheckArguments(int argc, char* argv[]) {
         i++;
       }
       i--; // Adjust for the for loop increment
-      
       if (args.textFiles.empty()) {
         std::cerr << "Error: No document files specified after -d option" << std::endl;
         ErrorOutput();
       }
-      
     } else if (currentArg == "-s") {
       if (hasStopWords) {
         std::cerr << "Error: -s option specified multiple times" << std::endl;
@@ -135,7 +131,6 @@ CommandLineArgs CheckArguments(int argc, char* argv[]) {
       }
       args.stopWordsFile = stopWordsFile;
       file.close();
-      
     } else if (currentArg == "-l") {
       if (hasLemmatization) {
         std::cerr << "Error: -l option specified multiple times" << std::endl;
@@ -155,7 +150,6 @@ CommandLineArgs CheckArguments(int argc, char* argv[]) {
       }
       args.lemmatizationFile = lemmatizationFile;
       file.close();
-      
     } else {
       std::cerr << "Error: Unknown option '" << currentArg << "'" << std::endl;
       ErrorOutput();
@@ -167,7 +161,7 @@ CommandLineArgs CheckArguments(int argc, char* argv[]) {
     std::cerr << "Error: Missing required options. All of -d, -s, and -l must be specified." << std::endl;
     ErrorOutput();
   }
-  
+
   return args;
 }
 
@@ -188,8 +182,9 @@ std::set<std::string> LoadStopWords(const std::string& filename) {
   std::string word;
   while (file >> word) {
     // Convert to lowercase for case-insensitive matching
-    std::transform(word.begin(), word.end(), word.begin(), 
-                   [](unsigned char c) { return std::tolower(c); });
+    for (size_t i = 0; i < word.length(); i++) {
+      word[i] = std::tolower(static_cast<unsigned char>(word[i]));
+    }
     stopWords.insert(word);
   }
   
@@ -220,60 +215,47 @@ std::map<std::string, std::string> LoadLemmatizationRules(const std::string& fil
     content += line;
   }
   file.close();
-  
   // Simple JSON parser for key-value pairs
   size_t pos = 0;
   bool inObject = false;
-  
   while (pos < content.length()) {
     char c = content[pos];
-    
     if (c == '{') {
       inObject = true;
       pos++;
       continue;
     }
-    
     if (c == '}') {
       break;
     }
-    
     if (inObject && c == '"') {
       // Found start of key
       size_t keyStart = pos + 1;
       size_t keyEnd = content.find('"', keyStart);
-      
       if (keyEnd == std::string::npos) {
         std::cerr << "Error: Malformed JSON in lemmatization file" << std::endl;
         exit(1);
       }
-      
       std::string key = content.substr(keyStart, keyEnd - keyStart);
-      
       // Find the colon
       pos = content.find(':', keyEnd);
       if (pos == std::string::npos) {
         std::cerr << "Error: Malformed JSON - missing colon" << std::endl;
         exit(1);
       }
-      
       // Find start of value
       pos = content.find('"', pos);
       if (pos == std::string::npos) {
         std::cerr << "Error: Malformed JSON - missing value quote" << std::endl;
         exit(1);
       }
-      
       size_t valueStart = pos + 1;
       size_t valueEnd = content.find('"', valueStart);
-      
       if (valueEnd == std::string::npos) {
         std::cerr << "Error: Malformed JSON - missing closing value quote" << std::endl;
         exit(1);
       }
-      
       std::string value = content.substr(valueStart, valueEnd - valueStart);
-      
       // Convert both to lowercase for consistent matching
       std::transform(key.begin(), key.end(), key.begin(), 
                      [](unsigned char c) { return std::tolower(c); });
@@ -281,7 +263,6 @@ std::map<std::string, std::string> LoadLemmatizationRules(const std::string& fil
                      [](unsigned char c) { return std::tolower(c); });
       
       lemmaMap[key] = value;
-      
       pos = valueEnd + 1;
     } else {
       pos++;
@@ -306,7 +287,6 @@ std::map<std::string, int> BuildVocabulary(const std::vector<File>& files) {
       uniqueTerms.insert(termFreq.first);
     }
   }
-  
   // Create indexed vocabulary
   std::map<std::string, int> vocabulary;
   int index = 0;
@@ -330,16 +310,13 @@ std::map<std::string, double> CalculateIDF(const std::vector<File>& files, int t
   for (const auto& file : files) {
     const auto& tf = file.GetTF();
     std::set<std::string> termsInDoc;
-    
     for (const auto& termFreq : tf) {
       termsInDoc.insert(termFreq.first);
     }
-    
     for (const auto& term : termsInDoc) {
       documentFrequency[term]++;
     }
   }
-  
   // Calculate IDF for each term
   std::map<std::string, double> idfMap;
   for (const auto& dfPair : documentFrequency) {
@@ -364,14 +341,12 @@ double CalculateCosineSimilarity(const std::map<std::string, double>& tfidf1,
   double dotProduct = 0.0;
   double norm1 = 0.0;
   double norm2 = 0.0;
-  
+
   // Calculate dot product and norm for tfidf1
   for (const auto& term1 : tfidf1) {
     const std::string& term = term1.first;
     double value1 = term1.second;
-    
     norm1 += value1 * value1;
-    
     auto it2 = tfidf2.find(term);
     if (it2 != tfidf2.end()) {
       dotProduct += value1 * it2->second;
@@ -383,7 +358,6 @@ double CalculateCosineSimilarity(const std::map<std::string, double>& tfidf1,
     double value2 = term2.second;
     norm2 += value2 * value2;
   }
-  
   // Avoid division by zero
   if (norm1 == 0.0 || norm2 == 0.0) {
     return 0.0;
@@ -402,7 +376,7 @@ void PrintSimilarityMatrix(const std::vector<File>& files) {
   std::cout << "\n" << std::string(80, '=') << std::endl;
   std::cout << "COSINE SIMILARITY MATRIX" << std::endl;
   std::cout << std::string(80, '=') << std::endl;
-  
+
   // Print header
   std::cout << std::setw(20) << " ";
   for (int j = 0; j < n; j++) {
@@ -414,7 +388,6 @@ void PrintSimilarityMatrix(const std::vector<File>& files) {
   // Print matrix
   for (int i = 0; i < n; i++) {
     std::cout << std::setw(20) << ("Document " + std::to_string(i));
-    
     for (int j = 0; j < n; j++) {
       if (i == j) {
         std::cout << std::setw(15) << std::fixed << std::setprecision(6) << 1.0;

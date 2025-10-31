@@ -35,7 +35,6 @@ void File::RemoveStopWords(const std::set<std::string>& stopWords) {
     for (const auto& word : line) {
       std::string lowerWord = ToLowerCase(word);
       if (stopWords.find(lowerWord) != stopWords.end()) {
-        // Replace stop word with a placeholder to maintain position
         processedLine.push_back("---");
       } else {
         processedLine.push_back(word);
@@ -52,7 +51,6 @@ void File::ApplyLemmatization(const std::map<std::string, std::string>& lemmaMap
     std::vector<std::string> lemmatizedLine;
     for (const auto& word : line) {
       if (word == "---") {
-        // Keep placeholder for stop words
         lemmatizedLine.push_back("---");
       } else {
         std::string lowerWord = ToLowerCase(word);
@@ -117,8 +115,9 @@ void File::PrintLemmatizedText() const {
 
 std::string File::ToLowerCase(const std::string& str) const {
   std::string result = str;
-  std::transform(result.begin(), result.end(), result.begin(), 
-                 [](unsigned char c) { return std::tolower(c); });
+  for (size_t i = 0; i < result.length(); i++) {
+    result[i] = std::tolower(static_cast<unsigned char>(result[i]));
+  }
   return result;
 }
 
@@ -141,7 +140,6 @@ void File::CalculateTF() {
   for (const auto& line : lemmatizedText_) {
     for (const auto& word : line) {
       if (word == "---" || word.empty()) continue;
-      
       std::string cleanedWord = CleanToken(word);
       if (!cleanedWord.empty()) {
         tf_[cleanedWord]++;
@@ -156,7 +154,6 @@ void File::CalculateTFIDF(const std::map<std::string, double>& idfMap) {
   for (const auto& termFreq : tf_) {
     const std::string& term = termFreq.first;
     int tf = termFreq.second;
-    
     auto idfIt = idfMap.find(term);
     if (idfIt != idfMap.end()) {
       double idf = idfIt->second;
@@ -179,10 +176,10 @@ std::string File::GetFileName() const {
 
 void File::PrintTFIDFTable(const std::map<std::string, int>& vocabulary,
                            const std::map<std::string, double>& idfMap) const {
+
   std::cout << "\n" << std::string(90, '=') << std::endl;
   std::cout << "TF-IDF TABLE FOR: " << fileName_ << std::endl;
   std::cout << std::string(90, '=') << std::endl;
-  
   std::cout << std::left << std::setw(8) << "Index" 
             << std::setw(20) << "Term" 
             << std::setw(10) << "TF"

@@ -31,10 +31,7 @@ int main(const int argc, char* argv[]) {
     // Process the file through all stages
     tempFile.RemoveStopWords(stopWords);
     tempFile.ApplyLemmatization(lemmaRules);
-    
-    // Calculate TF for this document
     tempFile.CalculateTF();
-    
     files.push_back(tempFile);
   }
   
@@ -56,17 +53,15 @@ int main(const int argc, char* argv[]) {
   // Build vocabulary for indexing
   std::map<std::string, int> vocabulary = BuildVocabulary(files);
   
-  // Print TF-IDF tables for each document
+  // Print results
   std::cout << "\n\nGENERATING TF-IDF TABLES\n" << std::endl;
   for (const auto& file : files) {
     file.PrintTFIDFTable(vocabulary, idfMap);
   }
-  
-  // Print similarity matrix
   if (files.size() > 1) {
     std::cout << "\n\nCALCULATING DOCUMENT SIMILARITIES\n" << std::endl;
     PrintSimilarityMatrix(files);
   }
-    
+
   return 0;
 }
