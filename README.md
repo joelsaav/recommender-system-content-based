@@ -129,8 +129,7 @@ recommender-system-content-based/
 │   ├── file.h
 │   └── tools.h
 ├── src/                # Código fuente (.cc)
-│   ├── file.cc
-│   ├── tools.cc
-│   └── main.cc
-└── recommender-system.exe  # Ejecutable (después de compilar)
+   ├── file.cc
+   ├── tools.cc
+   └── main.cc
 ```
