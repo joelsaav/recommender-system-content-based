@@ -374,23 +374,20 @@ void PrintSimilarityMatrix(const std::vector<File>& files) {
   int n = files.size();
   
   std::cout << "\n" << std::string(80, '=') << std::endl;
-  std::cout << "🔍 COSINE SIMILARITY MATRIX" << std::endl;
+  std::cout << "COSINE SIMILARITY MATRIX" << std::endl;
   std::cout << std::string(80, '=') << std::endl;
-  std::cout << "📝 Comparing " << n << " documents based on TF-IDF vectors" << std::endl;
-  std::cout << "💡 Values range from 0 (no similarity) to 1 (identical)" << std::endl;
-  std::cout << std::string(80, '-') << std::endl;
 
   // Print header
   std::cout << std::setw(20) << " ";
   for (int j = 0; j < n; j++) {
-    std::cout << std::setw(15) << ("Doc " + std::to_string(j));
+    std::cout << std::setw(15) << "Doc " + std::to_string(j);
   }
   std::cout << std::endl;
   std::cout << std::string(80, '-') << std::endl;
   
   // Print matrix
   for (int i = 0; i < n; i++) {
-    std::cout << std::setw(20) << ("📄 Document " + std::to_string(i));
+    std::cout << std::setw(20) << ("Document " + std::to_string(i));
     for (int j = 0; j < n; j++) {
       if (i == j) {
         std::cout << std::setw(15) << std::fixed << std::setprecision(6) << 1.0;
@@ -403,33 +400,6 @@ void PrintSimilarityMatrix(const std::vector<File>& files) {
       }
     }
     std::cout << std::endl;
-  }
-  
-  std::cout << std::string(80, '-') << std::endl;
-  
-  // Find and display most similar pair
-  double maxSimilarity = 0.0;
-  int mostSimilarI = -1, mostSimilarJ = -1;
-  
-  for (int i = 0; i < n; i++) {
-    for (int j = i + 1; j < n; j++) {
-      double similarity = CalculateCosineSimilarity(
-        files[i].GetTFIDF(), 
-        files[j].GetTFIDF()
-      );
-      if (similarity > maxSimilarity) {
-        maxSimilarity = similarity;
-        mostSimilarI = i;
-        mostSimilarJ = j;
-      }
-    }
-  }
-  
-  if (mostSimilarI != -1 && mostSimilarJ != -1) {
-    std::cout << "🏆 Most similar documents: Document " << mostSimilarI 
-              << " and Document " << mostSimilarJ 
-              << " (similarity: " << std::fixed << std::setprecision(6) 
-              << maxSimilarity << ")" << std::endl;
   }
   
   std::cout << std::string(80, '=') << std::endl;

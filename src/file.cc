@@ -178,7 +178,7 @@ void File::PrintTFIDFTable(const std::map<std::string, int>& vocabulary,
                            const std::map<std::string, double>& idfMap) const {
 
   std::cout << "\n" << std::string(90, '=') << std::endl;
-  std::cout << "📊 TF-IDF TABLE FOR: " << fileName_ << std::endl;
+  std::cout << "TF-IDF TABLE FOR: " << fileName_ << std::endl;
   std::cout << std::string(90, '=') << std::endl;
   std::cout << std::left << std::setw(8) << "Index" 
             << std::setw(20) << "Term" 
@@ -187,7 +187,6 @@ void File::PrintTFIDFTable(const std::map<std::string, int>& vocabulary,
             << std::setw(15) << "TF-IDF" << std::endl;
   std::cout << std::string(90, '-') << std::endl;
   
-  int termsShown = 0;
   for (const auto& vocabTerm : vocabulary) {
     const std::string& term = vocabTerm.first;
     int index = vocabTerm.second;
@@ -208,10 +207,7 @@ void File::PrintTFIDFTable(const std::map<std::string, int>& vocabulary,
                 << std::setw(15) << std::fixed << std::setprecision(6) << idf
                 << std::setw(15) << std::fixed << std::setprecision(6) << tfidf
                 << std::endl;
-      termsShown++;
     }
   }
-  std::cout << std::string(90, '-') << std::endl;
-  std::cout << "✅ Showing " << termsShown << " terms with non-zero frequency" << std::endl;
   std::cout << std::string(90, '=') << std::endl;
 }
