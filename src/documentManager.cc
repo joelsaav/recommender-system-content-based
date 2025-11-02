@@ -1,7 +1,11 @@
 #include "../include/documentManager.h"
 
-#include <iomanip>
-
+/**
+ * @brief Constructor for DocumentManager
+ * @param documents Vector of document file names
+ * @param stopWordsFile File name containing stop words
+ * @param lemmatizationFile File name containing lemmatization rules
+ */
 DocumentManager::DocumentManager(const std::vector<std::string>& documents,
                                  const std::string& stopWordsFile,
                                  const std::string& lemmatizationFile) {
@@ -38,14 +42,39 @@ DocumentManager::DocumentManager(const std::vector<std::string>& documents,
   CountDocumentsOccurrences();
 }
 
+/**
+ * @brief Getter for documents occurrences map
+ * @return Map of terms to the number of documents they appear in
+ */
 std::map<std::string, int> DocumentManager::documentsOccurrences() const {
   return documentsOccurrences_;
 }
 
+/**
+ * @brief Getter for lemmatization map
+ * @return Map of words to their lemmas
+ */
 std::map<std::string, std::string> DocumentManager::lemmatizationMap() const {
   return lemmatizationMap_;
 }
 
+/**
+ * @brief Main method to perform recommendation calculations
+ */
+void DocumentManager::Recommend() {
+  for (Document& doc : documents_) {
+    doc.CalculateTF();
+    doc.CalculateVectorLength();
+    doc.CalculateTFNormalized();
+  }
+  CalculateIDF();
+  CalculateCosineSimilarity();
+}
+
+/**
+ * @brief Load lemmatization rules from a JSON file
+ * @return Map of words to their lemmas
+ */
 std::map<std::string, std::string> DocumentManager::LoadLemmatizationRules(
     const std::string& lemmatizationFile) {
   std::map<std::string, std::string> lemmaMap;
@@ -117,6 +146,9 @@ std::map<std::string, std::string> DocumentManager::LoadLemmatizationRules(
   return lemmaMap;
 }
 
+/**
+ * @brief Count the number of documents each term appears in
+ */
 void DocumentManager::CountDocumentsOccurrences() {
   documentsOccurrences_.clear();
 
@@ -138,11 +170,14 @@ void DocumentManager::CountDocumentsOccurrences() {
   }
 }
 
+/**
+ * @brief Calculate Inverse Document Frequency (IDF) for all terms
+ */
 void DocumentManager::CalculateIDF() {
   for (const std::string& word : allWordsInCorpus_) {
     int docCount = documentsOccurrences_[word];
     if (docCount > 0) {
-      IDF_[word] = log10(static_cast<double>(TotalDocuments()) /
+      IDF_[word] = log10(static_cast<double>(documents_.size()) /
                          static_cast<double>(docCount));
     } else {
       IDF_[word] = 0.0;
@@ -150,16 +185,9 @@ void DocumentManager::CalculateIDF() {
   }
 }
 
-void DocumentManager::Recommend() {
-  for (Document& doc : documents_) {
-    doc.CalculateTF();
-    doc.CalculateVectorLength();
-    doc.CalculateTFNormalized();
-  }
-  CalculateIDF();
-  CalculateCosineSimilarity();
-}
-
+/**
+ * @brief Calculate cosine similarity matrix for all documents
+ */
 void DocumentManager::CalculateCosineSimilarity() {
   int n = documents_.size();
   similarityMatrix_.clear();
@@ -167,48 +195,47 @@ void DocumentManager::CalculateCosineSimilarity() {
 
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
-      if (i == j) {
-        similarityMatrix_[i][j] = 1.0;
-      } else {
-        double dotProduct = 0.0;
-        const std::map<std::string, double>& tfNorm_i =
-            documents_[i].TFNormalized();
-        const std::map<std::string, double>& tfNorm_j =
-            documents_[j].TFNormalized();
+      double dotProduct = 0.0;
+      const std::map<std::string, double>& tfNorm_i =
+          documents_[i].TFNormalized();
+      const std::map<std::string, double>& tfNorm_j =
+          documents_[j].TFNormalized();
 
-        for (const std::string& word : allWordsInCorpus_) {
-          double tf_i = 0.0;
-          double tf_j = 0.0;
+      for (const std::string& word : allWordsInCorpus_) {
+        double tf_i = 0.0;
+        double tf_j = 0.0;
 
-          auto it_i = tfNorm_i.find(word);
-          if (it_i != tfNorm_i.end()) {
-            tf_i = it_i->second;
-          }
-
-          auto it_j = tfNorm_j.find(word);
-          if (it_j != tfNorm_j.end()) {
-            tf_j = it_j->second;
-          }
-
-          dotProduct += tf_i * tf_j;
+        auto it_i = tfNorm_i.find(word);
+        if (it_i != tfNorm_i.end()) {
+          tf_i = it_i->second;
         }
 
-        similarityMatrix_[i][j] = dotProduct;
+        auto it_j = tfNorm_j.find(word);
+        if (it_j != tfNorm_j.end()) {
+          tf_j = it_j->second;
+        }
+
+        dotProduct += tf_i * tf_j;
       }
+
+      similarityMatrix_[i][j] = dotProduct;
     }
   }
 }
 
+/**
+ * @brief Print the cosine similarity matrix to the console
+ */
 void DocumentManager::PrintSimilarityMatrix() const {
   int n = documents_.size();
 
-  std::cout << "\n" << std::string(80, '=') << std::endl;
-  std::cout << "COSINE SIMILARITY MATRIX" << std::endl;
-  std::cout << std::string(80, '=') << std::endl;
+  std::cout << "\n=========================== COSINE SIMILARITY MATRIX "
+               "===========================\n"
+            << std::endl;
 
-  std::cout << std::setw(12) << " ";
+  std::cout << std::setw(10) << " ";
   for (int i = 0; i < n; ++i) {
-    std::cout << std::setw(12) << "Doc " << i + 1;
+    std::cout << std::setw(11) << "Doc " << i + 1;
   }
   std::cout << std::endl;
   std::cout << std::string(80, '-') << std::endl;
@@ -221,15 +248,55 @@ void DocumentManager::PrintSimilarityMatrix() const {
     }
     std::cout << std::endl;
   }
-  std::cout << std::string(80, '=') << std::endl;
 }
 
+/**
+ * @brief Overloaded output operator for DocumentManager
+ * @param os Output stream
+ * @param dm DocumentManager object
+ * @return Reference to the output stream
+ */
 std::ostream& operator<<(std::ostream& os, const DocumentManager& dm) {
-  os << std::endl << std::endl;
-  os << "=== DOCUMENTS SUMMARY ===" << std::endl;
-  os << "Total Documents: " << dm.TotalDocuments() << std::endl;
+  os << "\n=============================== TABLES OF TERMS "
+        "================================\n";
   for (const Document& doc : dm.documents()) {
-    os << "Document 1\n" << doc.documentName() << std::endl;
+    os << "\n=========================== " << doc.documentName()
+       << " ==========================\n\n";
+
+    os << std::left << std::setw(30) << "Term" << std::right << std::setw(12)
+       << "TF" << std::setw(12) << "IDF" << std::setw(12) << "TFIDF" << "\n";
+    os << std::string(80, '-') << "\n";
+
+    const auto& tf_map = doc.TF();
+    const auto& tfNorm_map = doc.TFNormalized();
+    const auto& idf_map = dm.IDF();
+
+    for (const std::string& term : dm.allWordsInCorpus()) {
+      double tf = 0.0;
+      auto it_tf = tf_map.find(term);
+      if (it_tf != tf_map.end()) {
+        tf = it_tf->second;
+      }
+
+      double idf = 0.0;
+      auto it_idf = idf_map.find(term);
+      if (it_idf != idf_map.end()) {
+        idf = it_idf->second;
+      }
+
+      double tfNorm = 0.0;
+      auto it_tfn = tfNorm_map.find(term);
+      if (it_tfn != tfNorm_map.end()) {
+        tfNorm = it_tfn->second;
+      }
+
+      os << std::left << std::setw(30) << term << std::right << std::setw(12)
+         << std::fixed << std::setprecision(6) << tf << std::setw(12) << idf
+         << std::setw(12) << tfNorm << "\n";
+    }
+
+    os << "\n";
   }
+  dm.PrintSimilarityMatrix();
   return os;
 }

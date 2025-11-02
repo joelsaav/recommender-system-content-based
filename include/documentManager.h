@@ -2,9 +2,7 @@
 #define DOCUMENT_MANAGER_H_
 
 #include <algorithm>
-#include <map>
-#include <string>
-#include <vector>
+#include <iomanip>
 
 #include "document.h"
 
@@ -14,16 +12,30 @@ class DocumentManager {
                   const std::string& stopWordsFile,
                   const std::string& lemmatizationFile);
 
+  /**
+   * @brief Getter for all documents in corpus
+   * @return Vector of Document objects
+   */
   std::vector<Document> documents() const { return documents_; }
-  std::map<std::string, int> documentsOccurrences() const;
+  /**
+   * @brief Getter for stop words set
+   * @return Set of stop words
+   */
   std::set<std::string> stopWords() const { return stopWords_; }
-  std::map<std::string, std::string> lemmatizationMap() const;
+  /**
+   * @brief Getter for all words in corpus
+   * @return Set of all unique words in the corpus
+   */
   std::set<std::string> allWordsInCorpus() const { return allWordsInCorpus_; }
-  int TotalDocuments() const { return documents_.size(); }
+  /**
+   * @brief Getter for IDF map
+   * @return Map of terms to their IDF values
+   */
+  std::map<std::string, double> IDF() const { return IDF_; }
+  std::map<std::string, int> documentsOccurrences() const;
+  std::map<std::string, std::string> lemmatizationMap() const;
 
-  void CalculateIDF();
   void Recommend();
-  void CalculateCosineSimilarity();
   void PrintSimilarityMatrix() const;
 
  private:
@@ -38,6 +50,8 @@ class DocumentManager {
   std::map<std::string, std::string> LoadLemmatizationRules(
       const std::string& lemmatizationFile);
   void CountDocumentsOccurrences();
+  void CalculateIDF();
+  void CalculateCosineSimilarity();
 };
 
 std::ostream& operator<<(std::ostream& os, const DocumentManager& dm);

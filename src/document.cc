@@ -1,9 +1,9 @@
 #include "../include/document.h"
 
-#include <algorithm>
-#include <cctype>
-#include <iomanip>
-
+/**
+ * @brief Constructor for Document class
+ * @param inputDocument Path to the input document file
+ */
 Document::Document(const std::string &inputDocument)
     : documentName_(inputDocument) {
   std::ifstream file{inputDocument};
@@ -27,6 +27,10 @@ Document::Document(const std::string &inputDocument)
   simplifiedText_ = originalText_;
 }
 
+/**
+ * @brief Remove stop words from the document
+ * @param stopWords Set of stop words to remove
+ */
 void Document::RemoveStopWords(const std::set<std::string> &stopWords) {
   std::vector<std::vector<std::string>> filtered;
 
@@ -44,6 +48,10 @@ void Document::RemoveStopWords(const std::set<std::string> &stopWords) {
   simplifiedText_ = filtered;
 }
 
+/**
+ * @brief Clean tokens in the document by removing non-alphanumeric characters
+ *        and converting to lowercase
+ */
 void Document::CleanTokens() {
   std::vector<std::vector<std::string>> cleanedText;
   cleanedText.reserve(simplifiedText_.size());
@@ -59,6 +67,12 @@ void Document::CleanTokens() {
   simplifiedText_ = std::move(cleanedText);
 }
 
+/**
+ * @brief Clean a single token by removing non-alphanumeric characters
+ *        and converting to lowercase
+ * @param token The input token to clean
+ * @return The cleaned token
+ */
 std::string Document::CleanToken(const std::string &token) const {
   std::string result;
   result.reserve(token.size());
@@ -70,6 +84,10 @@ std::string Document::CleanToken(const std::string &token) const {
   return result;
 }
 
+/**
+ * @brief Perform lemmatization on the document using the provided lemma map
+ * @param lemmaMap Map of words to their lemmas
+ */
 void Document::Lemmatization(
     const std::map<std::string, std::string> &lemmaMap) {
   std::vector<std::vector<std::string>> lemmatized;
@@ -88,23 +106,44 @@ void Document::Lemmatization(
   simplifiedText_ = lemmatized;
 }
 
+/**
+ * @brief Getter for original text
+ * @return Reference to the original text vector
+ */
 const std::vector<std::vector<std::string>> &Document::originalText() const {
   return originalText_;
 }
 
+/**
+ * @brief Getter for simplified text
+ * @return Reference to the simplified text vector
+ */
 const std::vector<std::vector<std::string>> &Document::simplifiedText() const {
   return simplifiedText_;
 }
 
+/**
+ * @brief Getter for Term Frequency Normalized (TFNormalized) map
+ * @return Map of terms to their normalized TF values
+ */
 const std::map<std::string, double> &Document::TFNormalized() const {
   return TFNormalized_;
 }
 
+/**
+ * @brief Setter for all words in corpus
+ * @param allWordsInCorpus Set of all unique words in the corpus
+ */
 void Document::setAllWordsInCorpus(
     const std::set<std::string> &allWordsInCorpus) {
   allWordsInCorpus_ = allWordsInCorpus;
 }
 
+/**
+ * @brief Convert a string to lowercase
+ * @param str Input string
+ * @return Lowercase version of the input string
+ */
 std::string Document::ToLowerCase(const std::string &str) const {
   std::string result = str;
   for (size_t i = 0; i < result.length(); i++) {
@@ -113,6 +152,9 @@ std::string Document::ToLowerCase(const std::string &str) const {
   return result;
 }
 
+/**
+ * @brief Calculate Term Frequency (TF) for all terms in the document
+ */
 void Document::CalculateTF() {
   TF_.clear();
   for (const std::string &word : allWordsInCorpus_) {
@@ -132,6 +174,9 @@ void Document::CalculateTF() {
   }
 }
 
+/**
+ * @brief Calculate the length of the TF vector
+ */
 void Document::CalculateVectorLength() {
   double sumSquares = 0.0;
   for (const auto &termFreq : TF_) {
@@ -140,6 +185,9 @@ void Document::CalculateVectorLength() {
   vectorLength_ = std::sqrt(sumSquares);
 }
 
+/**
+ * @brief Calculate Normalized Term Frequency (TFNormalized) for all terms
+ */
 void Document::CalculateTFNormalized() {
   TFNormalized_.clear();
   for (const auto &termFreq : TF_) {
@@ -147,6 +195,12 @@ void Document::CalculateTFNormalized() {
   }
 }
 
+/**
+ * @brief Overloaded output operator for Document
+ * @param os Output stream
+ * @param doc Document object
+ * @return Reference to the output stream
+ */
 std::ostream &operator<<(std::ostream &os, const Document &doc) {
   os << "Vector Length: " << doc.vectorLength() << std::endl;
 
