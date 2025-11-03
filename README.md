@@ -5,7 +5,7 @@
 Desde el directorio raíz del proyecto (Windows):
 
 ```powershell
-g++ -std=c++11 src/file.cc src/tools.cc src/main.cc -Iinclude -o recommender-system.exe
+g++ -std=c++11 src/document.cc src/documentManager.cc src/tools.cc src/main.cc -Iinclude -o recommender-system.exe
 ```
 
 ## Ejecución
@@ -35,7 +35,7 @@ Para cada documento procesado, se genera una tabla con las siguientes columnas:
 - **Term**: El término (palabra lematizada)
 - **TF**: Frecuencia del término en el documento (número de apariciones)
 - **IDF**: Inverse Document Frequency (importancia del término en el corpus)
-- **TF-IDF**: Producto TF × IDF (peso del término en el documento)
+- **TF-IDF**: Términos vectorizados y normalizados por documento
 
 Ejemplo:
 ```
