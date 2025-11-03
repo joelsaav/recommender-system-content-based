@@ -31,24 +31,22 @@ El programa genera dos tipos de salida:
 ### 1. Tablas TF-IDF por Documento
 
 Para cada documento procesado, se genera una tabla con las siguientes columnas:
-- **Index**: Índice del término en el vocabulario
 - **Term**: El término (palabra lematizada)
 - **TF**: Frecuencia del término en el documento (número de apariciones)
 - **IDF**: Inverse Document Frequency (importancia del término en el corpus)
 - **TF-IDF**: Términos vectorizados y normalizados por documento
+- **Index**: Índice del término en el vocabulario (fila, columna)
 
 Ejemplo:
 ```
-==========================================================================================
-TF-IDF TABLE FOR: documents/document-01.txt
-==========================================================================================
-Index   Term                TF        IDF            TF-IDF
+=========================== documents/document-03.txt ==========================
+
+Term                                    TF         IDF       TFIDF          Index
 ------------------------------------------------------------------------------------------
-189     lake                13        0.000000       0.000000
-397     walk                9         0.000000       0.000000
-425     write               6         0.000000       0.000000
-405     water               6         0.000000       0.000000
-172     i                   44        0.000000       0.000000
+a                                 2.397940    0.000000    0.133168          0, 50
+accept                            0.000000    0.477121    0.000000            N/A
+acceptance                        1.000000    0.000000    0.055534         11, 40
+achieve                           0.000000    0.477121    0.000000            N/A
 ...
 ```
 
@@ -58,15 +56,13 @@ Se genera una matriz simétrica NxN (donde N = número de documentos) que muestr
 
 Ejemplo:
 ```
-================================================================================
-COSINE SIMILARITY MATRIX
-================================================================================
-                    Doc 0          Doc 1          Doc 2
+=========================== COSINE SIMILARITY MATRIX ===========================
+
+                 Doc 1       Doc 2       Doc 3
 --------------------------------------------------------------------------------
-Document 0          1.000000       0.073397       0.055204
-Document 1          0.073397       1.000000       0.073705
-Document 2          0.055204       0.073705       1.000000
-================================================================================
+      Doc 1:     1.000000    0.670136    0.655077
+      Doc 2:     0.670136    1.000000    0.641121
+      Doc 3:     0.655077    0.641121    1.000000
 ```
 
 ## Opciones de Línea de Comandos
@@ -80,12 +76,12 @@ Document 2          0.055204       0.073705       1.000000
 
 **TF (Term Frequency)**:
 ```
-TF(t,d) = número de veces que el término t aparece en el documento d
+TF(t,d) = número de veces que el término t aparece en el documento d (1 + log10(t))
 ```
 
 **IDF (Inverse Document Frequency) con smoothing**:
 ```
-IDF(t) = log((N + 1) / (DF(t) + 1))
+IDF(t) = log10(N / DF(t))
 donde:
   N = número total de documentos
   DF(t) = número de documentos que contienen el término t
@@ -93,7 +89,7 @@ donde:
 
 **TF-IDF**:
 ```
-TF-IDF(t,d) = TF(t,d) × IDF(t)
+TF-IDF(t,d) = Términos vectorizados y normalizados por documento
 ```
 
 **Similitud Coseno**:
@@ -109,14 +105,14 @@ donde:
 1. **Tokenización**: Se separa el texto por espacios
 2. **Limpieza**: Se eliminan signos de puntuación de inicio y fin de cada token
 3. **Normalización**: Todo se convierte a minúsculas
-4. **Stop-words**: Se eliminan palabras vacías (se marcan como "---")
+4. **Stop-words**: Se eliminan palabras vacías (se marcan con otro carácter para mantener proporciones)
 5. **Lematización**: Se aplican reglas de reducción a formas base
 
 ### Características del Vocabulario
 
 - Solo se incluyen términos que aparecen en al menos un documento
 - Los términos se indexan alfabéticamente
-- Se ignoran los placeholders "---" (stop-words) en todos los cálculos
+- Se ignoran los placeholders (stop-words) en todos los cálculos
 
 ## Estructura del Proyecto
 
