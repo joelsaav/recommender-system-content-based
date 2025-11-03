@@ -39,11 +39,12 @@ void Document::RemoveStopWords(const std::set<std::string> &stopWords) {
     for (const auto &word : line) {
       if (stopWords.find(word) == stopWords.end()) {
         processedLine.push_back(word);
+      } else {
+        // Replace stop word with empty string marker to preserve position
+        processedLine.push_back("");
       }
     }
-    if (!processedLine.empty()) {
-      filtered.push_back(processedLine);
-    }
+    filtered.push_back(processedLine);
   }
   simplifiedText_ = filtered;
 }
@@ -140,6 +141,15 @@ void Document::setAllWordsInCorpus(
 }
 
 /**
+ * @brief Setter for lemmatization map
+ * @param lemmatizationMap Map of words to their lemmas
+ */
+void Document::setLemmatizationMap(
+    const std::map<std::string, std::string> &lemmatizationMap) {
+  lemmatizationMap_ = lemmatizationMap;
+}
+
+/**
  * @brief Convert a string to lowercase
  * @param str Input string
  * @return Lowercase version of the input string
@@ -162,7 +172,10 @@ void Document::CalculateTF() {
   }
   for (const std::vector<std::string> &line : simplifiedText_) {
     for (const std::string &word : line) {
-      TF_[word] += 1.0;
+      // Skip empty strings (removed stop words)
+      if (!word.empty()) {
+        TF_[word] += 1.0;
+      }
     }
   }
   for (auto &termFreq : TF_) {
@@ -170,6 +183,36 @@ void Document::CalculateTF() {
       termFreq.second = 1 + log10(termFreq.second);
     } else {
       termFreq.second = 0.0;
+    }
+  }
+}
+
+/**
+ * @brief Calculate the index of the first occurrence of each term in the simplified text
+ */
+void Document::CalculateTermIndices() {
+  termIndices_.clear();
+  
+  // Initialize all corpus words with (-1, -1) to indicate not found
+  for (const std::string &word : allWordsInCorpus_) {
+    termIndices_[word] = std::make_pair(-1, -1);
+  }
+  
+  // Iterate through simplifiedText_ to find first occurrence of each term
+  for (size_t row = 0; row < simplifiedText_.size(); ++row) {
+    for (size_t col = 0; col < simplifiedText_[row].size(); ++col) {
+      const std::string &term = simplifiedText_[row][col];
+      
+      // Skip empty strings (removed stop words)
+      if (term.empty()) {
+        continue;
+      }
+      
+      // If this term is in the corpus and hasn't been found yet, store its position
+      if (allWordsInCorpus_.find(term) != allWordsInCorpus_.end() && 
+          termIndices_[term].first == -1) {
+        termIndices_[term] = std::make_pair(static_cast<int>(row), static_cast<int>(col));
+      }
     }
   }
 }

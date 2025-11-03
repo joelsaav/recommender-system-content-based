@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <sstream>
 
 #include "document.h"
 

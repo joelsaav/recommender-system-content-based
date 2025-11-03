@@ -27,6 +27,11 @@ class Document {
   const std::map<std::string, double> &TF() const { return TF_; }
   const std::map<std::string, double> &TFNormalized() const;
   /**
+   * @brief Getter for term indices
+   * @return Map of terms to their first occurrence position (row, column)
+   */
+  const std::map<std::string, std::pair<int, int>> &termIndices() const { return termIndices_; }
+  /**
    * @brief Getter for vector length
    * @return Length of the TF vector
    */
@@ -36,12 +41,18 @@ class Document {
    * @param allWordsInCorpus Set of all unique words in the corpus
    */
   void setAllWordsInCorpus(const std::set<std::string> &allWordsInCorpus);
+  /**
+   * @brief Setter for lemmatization map
+   * @param lemmatizationMap Map of words to their lemmas
+   */
+  void setLemmatizationMap(const std::map<std::string, std::string> &lemmatizationMap);
 
   void CleanTokens();
   void RemoveStopWords(const std::set<std::string> &stopWords);
   void Lemmatization(
       const std::map<std::string, std::string> &lemmatizationMap);
   void CalculateTF();
+  void CalculateTermIndices();
   void CalculateVectorLength();
   void CalculateTFNormalized();
 
@@ -51,7 +62,9 @@ class Document {
   std::vector<std::vector<std::string>> simplifiedText_;
   std::map<std::string, double> TF_;
   std::map<std::string, double> TFNormalized_;
+  std::map<std::string, std::pair<int, int>> termIndices_;
   std::set<std::string> allWordsInCorpus_;
+  std::map<std::string, std::string> lemmatizationMap_;
   double vectorLength_;
 
   std::string ToLowerCase(const std::string &str) const;

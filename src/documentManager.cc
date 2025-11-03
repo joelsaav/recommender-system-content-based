@@ -30,13 +30,17 @@ DocumentManager::DocumentManager(const std::vector<std::string>& documents,
     documents_.push_back(doc);
     for (const auto& line : doc.simplifiedText()) {
       for (const auto& word : line) {
-        allWordsInCorpus_.insert(word);
+        // Skip empty strings (removed stop words)
+        if (!word.empty()) {
+          allWordsInCorpus_.insert(word);
+        }
       }
     }
   }
 
   for (Document& doc : documents_) {
     doc.setAllWordsInCorpus(allWordsInCorpus_);
+    doc.setLemmatizationMap(lemmatizationMap_);
   }
 
   CountDocumentsOccurrences();
@@ -63,6 +67,7 @@ std::map<std::string, std::string> DocumentManager::lemmatizationMap() const {
  */
 void DocumentManager::Recommend() {
   for (Document& doc : documents_) {
+    doc.CalculateTermIndices();
     doc.CalculateTF();
     doc.CalculateVectorLength();
     doc.CalculateTFNormalized();
@@ -160,7 +165,10 @@ void DocumentManager::CountDocumentsOccurrences() {
 
     for (const std::vector<std::string>& line : simplifiedText) {
       for (const std::string& word : line) {
-        uniqueTerms.insert(word);
+        // Skip empty strings (removed stop words)
+        if (!word.empty()) {
+          uniqueTerms.insert(word);
+        }
       }
     }
 
@@ -264,12 +272,14 @@ std::ostream& operator<<(std::ostream& os, const DocumentManager& dm) {
        << " ==========================\n\n";
 
     os << std::left << std::setw(30) << "Term" << std::right << std::setw(12)
-       << "TF" << std::setw(12) << "IDF" << std::setw(12) << "TFIDF" << "\n";
-    os << std::string(80, '-') << "\n";
+       << "TF" << std::setw(12) << "IDF" << std::setw(12) << "TFIDF" 
+       << std::setw(15) << "Index" << "\n";
+    os << std::string(90, '-') << "\n";
 
     const auto& tf_map = doc.TF();
     const auto& tfNorm_map = doc.TFNormalized();
     const auto& idf_map = dm.IDF();
+    const auto& termIndices_map = doc.termIndices();
 
     for (const std::string& term : dm.allWordsInCorpus()) {
       double tf = 0.0;
@@ -290,9 +300,25 @@ std::ostream& operator<<(std::ostream& os, const DocumentManager& dm) {
         tfNorm = it_tfn->second;
       }
 
+      std::pair<int, int> termIndex = std::make_pair(-1, -1);
+      auto it_idx = termIndices_map.find(term);
+      if (it_idx != termIndices_map.end()) {
+        termIndex = it_idx->second;
+      }
+
       os << std::left << std::setw(30) << term << std::right << std::setw(12)
          << std::fixed << std::setprecision(6) << tf << std::setw(12) << idf
-         << std::setw(12) << tfNorm << "\n";
+         << std::setw(12) << tfNorm;
+      
+      if (termIndex.first == -1) {
+        os << std::setw(15) << "N/A";
+      } else {
+        std::ostringstream indexStr;
+        indexStr << termIndex.first << ", " << termIndex.second;
+        os << std::setw(15) << indexStr.str();
+      }
+      
+      os << "\n";
     }
 
     os << "\n";
