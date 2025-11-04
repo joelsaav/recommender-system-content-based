@@ -2,90 +2,88 @@
 
 ## Compilación
 
-Desde el directorio raíz del proyecto (Windows):
+Desde el directorio raíz del proyecto:
 
-```powershell
-g++ -std=c++11 src/file.cc src/tools.cc src/main.cc -Iinclude -o recommender-system.exe
+```bash
+make
 ```
-
+Para limpìar los archivos resultantes de la compilación:
+```bash
+make clean
+```
 ## Ejecución
-
-### Ejemplo básico (1 documento)
-```powershell
-.\recommender-system.exe -d documents/document-01.txt -s stop-words/stop-words-en.txt -l lemmatization/corpus-en.json
-```
-
-### Ejemplo con múltiples documentos
-```powershell
-.\recommender-system.exe -d documents/document-01.txt documents/document-02.txt documents/document-03.txt -s stop-words/stop-words-en.txt -l lemmatization/corpus-en.json
-```
-
-```powershell
-.\recommender-system.exe -d documents/document-01.txt documents/document-02.txt documents/document-03.txt documents/document-04.txt documents/document-05.txt -s stop-words/stop-words-en.txt -l lemmatization/corpus-en.json
-```
-
-## Salida del Programa
-
-El programa genera dos tipos de salida:
-
-### 1. Tablas TF-IDF por Documento
-
-Para cada documento procesado, se genera una tabla con las siguientes columnas:
-- **Index**: Índice del término en el vocabulario
-- **Term**: El término (palabra lematizada)
-- **TF**: Frecuencia del término en el documento (número de apariciones)
-- **IDF**: Inverse Document Frequency (importancia del término en el corpus)
-- **TF-IDF**: Producto TF × IDF (peso del término en el documento)
-
-Ejemplo:
-```
-==========================================================================================
-TF-IDF TABLE FOR: documents/document-01.txt
-==========================================================================================
-Index   Term                TF        IDF            TF-IDF
-------------------------------------------------------------------------------------------
-189     lake                13        0.000000       0.000000
-397     walk                9         0.000000       0.000000
-425     write               6         0.000000       0.000000
-405     water               6         0.000000       0.000000
-172     i                   44        0.000000       0.000000
-...
-```
-
-### 2. Matriz de Similitud Coseno
-
-Se genera una matriz simétrica NxN (donde N = número de documentos) que muestra la similitud entre cada par de documentos. Los valores van de 0 (completamente diferentes) a 1 (idénticos).
-
-Ejemplo:
-```
-================================================================================
-COSINE SIMILARITY MATRIX
-================================================================================
-                    Doc 0          Doc 1          Doc 2
---------------------------------------------------------------------------------
-Document 0          1.000000       0.073397       0.055204
-Document 1          0.073397       1.000000       0.073705
-Document 2          0.055204       0.073705       1.000000
-================================================================================
-```
-
-## Opciones de Línea de Comandos
+### Opciones de Línea de Comandos
 
 - `-d <archivos...>`: Uno o más documentos de texto a analizar (requerido)
 - `-s <archivo>`: Archivo con stop-words (requerido)
 - `-l <archivo>`: Archivo JSON con reglas de lematización (requerido)
 - `-h` o `--help`: Muestra ayuda
 
+### Ejemplo básico (1 documento)
+```bash
+.\recommender-system-content-based -d documents/document-01.txt -s stop-words/stop-words-en.txt -l lemmatization/corpus-en.json
+```
+
+### Ejemplo con múltiples documentos
+```bash
+.\recommender-system-content-based -d documents/document-01.txt documents/document-02.txt documents/document-03.txt -s stop-words/stop-words-en.txt -l lemmatization/corpus-en.json
+```
+
+```bash
+.\recommender-system-content-based -d documents/document-01.txt documents/document-02.txt documents/document-03.txt documents/document-04.txt documents/document-05.txt -s stop-words/stop-words-en.txt -l lemmatization/corpus-en.json
+```
+
+## Salida del Programa
+
+El programa genera:
+
+### Tabla TF-IDF por Documento
+
+Para cada documento procesado, se genera una tabla con las siguientes columnas:
+- **Term**: El término (palabra lematizada)
+- **TF**: Frecuencia del término en el documento
+- **IDF**: Inverse Document Frequency (importancia del término en el corpus)
+- **TF-IDF**: Vector de las frecuecias normalizadas del término
+- **Index**: Índice del término en el vocabulario (fila, columna)
+
+Ejemplo:
+```
+=========================== documents/document-03.txt ==========================
+
+Term                                    TF         IDF       TFIDF          Index
+------------------------------------------------------------------------------------------
+a                                 2.397940    0.000000    0.133168          0, 50
+accept                            0.000000    0.477121    0.000000            N/A
+acceptance                        1.000000    0.000000    0.055534         11, 40
+achieve                           0.000000    0.477121    0.000000            N/A
+...
+```
+
+### Matriz de Similaridad Coseno
+
+Se genera una matriz simétrica NxN (donde N = número de documentos) que muestra la similitud entre cada par de documentos. Los valores van de 0 (completamente diferentes) a 1 (idénticos).
+
+Ejemplo:
+```
+=========================== COSINE SIMILARITY MATRIX ===========================
+
+                 Doc 1       Doc 2       Doc 3
+--------------------------------------------------------------------------------
+      Doc 1:     1.000000    0.670136    0.655077
+      Doc 2:     0.670136    1.000000    0.641121
+      Doc 3:     0.655077    0.641121    1.000000
+```
+
 ## Notas 
 
 **TF (Term Frequency)**:
 ```
-TF(t,d) = número de veces que el término t aparece en el documento d
+TF(t,d) = número de veces que el término t aparece en el documento d (1 + log10(tf))
 ```
 
 **IDF (Inverse Document Frequency) con smoothing**:
 ```
-IDF(t) = log((N + 1) / (DF(t) + 1))
+IDF(t) = log10(N / DF(t))
 donde:
   N = número total de documentos
   DF(t) = número de documentos que contienen el término t
@@ -93,30 +91,20 @@ donde:
 
 **TF-IDF**:
 ```
-TF-IDF(t,d) = TF(t,d) × IDF(t)
+TF-IDF(t,d) = Vector de las frecuencias de los términos normalizadas
 ```
 
 **Similitud Coseno**:
 ```
-cos(d1, d2) = (d1 · d2) / (||d1|| × ||d2||)
-donde:
-  d1 · d2 = producto punto de los vectores TF-IDF
-  ||d|| = norma euclidiana del vector
+cos(d1, d2) = Producto escalar de los vectores TF-IDF del par de documentos a calcular.
 ```
 
 ### Preprocesamiento
 
-1. **Tokenización**: Se separa el texto por espacios
-2. **Limpieza**: Se eliminan signos de puntuación de inicio y fin de cada token
-3. **Normalización**: Todo se convierte a minúsculas
-4. **Stop-words**: Se eliminan palabras vacías (se marcan como "---")
-5. **Lematización**: Se aplican reglas de reducción a formas base
+1. **Preprocesamiento**: Se eliminan signos de puntuación de inicio y fin de cada término y se convierten a minúsculas.
+2. **Stop-words**: Se eliminan palabras vacías (se marcan con otro carácter para mantener proporciones).
+3. **Lematización**: Se mapean términos relacionados morfológicamente a un término común.
 
-### Características del Vocabulario
-
-- Solo se incluyen términos que aparecen en al menos un documento
-- Los términos se indexan alfabéticamente
-- Se ignoran los placeholders "---" (stop-words) en todos los cálculos
 
 ## Estructura del Proyecto
 
@@ -126,11 +114,12 @@ recommender-system-content-based/
 ├── stop-words/         # Archivos con palabras vacías
 ├── lemmatization/      # Archivos JSON con reglas de lematización
 ├── include/            # Headers (.h)
-│   ├── file.h
+│   ├── document.h
+│   ├── documentManager.h
 │   └── tools.h
 ├── src/                # Código fuente (.cc)
-│   ├── file.cc
-│   ├── tools.cc
-│   └── main.cc
-└── recommender-system.exe  # Ejecutable (después de compilar)
+    ├── document.cc
+    ├── documentManager.cc
+    ├── tools.cc
+    └── main.cc
 ```
